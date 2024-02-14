@@ -1,0 +1,121 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                     Blitz Scalper |
+//|                                            Developer: Forex Robot Easy Team |
+//|                                           Developer's Site: forexroboteasy.com |
+//+------------------------------------------------------------------+
+
+// Define input parameters
+input double lotSize = 0.01;
+input int stopLoss = 20;
+input int takeProfit = 40;
+
+// Define global variables
+double trendStrength;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Set up user interface and initialize variables
+    ChartSetInteger(0, CHART_SHOW_TRADE_LEVELS, true);
+    ChartSetInteger(0, CHART_SHOW_OBJECT_DESCR, true);
+    ChartSetInteger(0, CHART_SHOW_PERIOD_SEP, true);
+    
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    // Clean up and perform any necessary actions before termination
+    ChartSetInteger(0, CHART_SHOW_TRADE_LEVELS, false);
+    ChartSetInteger(0, CHART_SHOW_OBJECT_DESCR, false);
+    ChartSetInteger(0, CHART_SHOW_PERIOD_SEP, false);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    // Perform trend analysis and identify trading opportunities
+    double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double previousPrice = SymbolInfoDouble(_Symbol, SYMBOL_LAST);
+    
+    if (currentPrice > previousPrice)
+    {
+        trendStrength = currentPrice - previousPrice;
+        if (trendStrength > 0)
+        {
+            // Generate buy signal
+            BuySignal();
+        }
+    }
+    else if (currentPrice < previousPrice)
+    {
+        trendStrength = previousPrice - currentPrice;
+        if (trendStrength > 0)
+        {
+            // Generate sell signal
+            SellSignal();
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Generate buy signal                                              |
+//+------------------------------------------------------------------+
+void BuySignal()
+{
+    // Display buy signal on chart
+    ObjectCreate('BuySignal', OBJ_ARROW, 0, Time[0], Low[0] - 10 * Point);
+    ObjectSet('BuySignal', OBJPROP_ARROWCODE, SYMBOL_ARROWUP);
+    ObjectSet('BuySignal', OBJPROP_COLOR, clrGreen);
+    
+    // Place buy order
+    double stopLossPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID) - stopLoss * Point;
+    double takeProfitPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID) + takeProfit * Point;
+    int ticket = OrderSend(_Symbol, OP_BUY, lotSize, SymbolInfoDouble(_Symbol, SYMBOL_BID), 0, stopLossPrice, takeProfitPrice, 'Buy Order', 0, 0, clrGreen);
+    
+    if (ticket > 0)
+    {
+        // Buy order executed successfully
+        Print('Buy order executed successfully');
+    }
+    else
+    {
+        // Buy order failed
+        Print('Buy order failed with error code ', GetLastError());
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Generate sell signal                                             |
+//+------------------------------------------------------------------+
+void SellSignal()
+{
+    // Display sell signal on chart
+    ObjectCreate('SellSignal', OBJ_ARROW, 0, Time[0], High[0] + 10 * Point);
+    ObjectSet('SellSignal', OBJPROP_ARROWCODE, SYMBOL_ARROWDOWN);
+    ObjectSet('SellSignal', OBJPROP_COLOR, clrRed);
+    
+    // Place sell order
+    double stopLossPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID) + stopLoss * Point;
+    double takeProfitPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID) - takeProfit * Point;
+    int ticket = OrderSend(_Symbol, OP_SELL, lotSize, SymbolInfoDouble(_Symbol, SYMBOL_BID), 0, stopLossPrice, takeProfitPrice, 'Sell Order', 0, 0, clrRed);
+    
+    if (ticket > 0)
+    {
+        // Sell order executed successfully
+        Print('Sell order executed successfully');
+    }
+    else
+    {
+        // Sell order failed
+        Print('Sell order failed with error code ', GetLastError());
+    }
+}
